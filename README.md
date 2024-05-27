@@ -1,0 +1,1 @@
+By referring to the intersection of OSG polyhedra and the intersection of line segments of VSG, the polyhedral selection point cloud for emergency is written. Lack of intersections for triangulation and line segments.
