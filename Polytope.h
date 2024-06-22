@@ -49,6 +49,11 @@ namespace vsg {
 		 /* Check whether a vertex is contained within clipping set.*/
 		 bool contains(const vsg::dvec3& v) const;
 
+		 bool contains(const vsg::dvec3& v1, const vsg::dvec3& v2,uint32_t &firstIndex, uint32_t& secondIndex);
+		 bool contains(const vsg::dvec3& v1, const vsg::dvec3& v2, const uint16_t& firstIndex,const  uint16_t& secondIndex);
+
+		 bool contains(const vsg::dvec3& v1, const vsg::dvec3& v2, const vsg::dvec3& v3);
+
 		 /* Check whether a line is contained within clipping set.*/
 		 /* contain one or contain all */
 		 bool contains(ref_ptr<const vec3Array> vertices,bool checkAll);
@@ -69,6 +74,17 @@ namespace vsg {
 			else if (d < -bs.radius) return -1;
 			else return 0;
 		}
+		 bool checkInPlanlist(const vsg::dvec3& v)
+		 {
+			 for (int i = 0; i < _planeList.size(); i++)
+			 {
+				 if (vsg::distance(_planeList.at(i), v) < 0.0f)
+				 {
+					 return false;
+
+				 }
+			 }
+		 }
 	private:
 		
 		PlaneList   _planeList;

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vsg/all.h>
 #include "PolytopeIntersector.h"
+
 using namespace vsg;
 class IntersectionHandler : public vsg::Inherit<vsg::Visitor, IntersectionHandler>
 {
@@ -214,7 +215,8 @@ int main(int argc, char** argv)
 
     auto windowTraits = vsg::WindowTraits::create();
     windowTraits->debugLayer = true;
-    windowTraits->apiDumpLayer = arguments.read({ "--api", "-a" });
+    //windowTraits->apiDumpLayer = true;
+    windowTraits->debugUtils = true;
     windowTraits->width = 900;
         windowTraits->height =600;
 
@@ -255,7 +257,7 @@ int main(int argc, char** argv)
         VkVertexInputAttributeDescription{1, 1, VK_FORMAT_R32G32B32_SFLOAT, 0}, // colour data
                                           
     };
-
+    //VK_PRIMITIVE_TOPOLOGY_LINE_STRIP
     vsg::GraphicsPipelineStates pipelineStates{
         vsg::VertexInputState::create(vertexBindingsDescriptions, vertexAttributeDescriptions),
         vsg::InputAssemblyState::create(VK_PRIMITIVE_TOPOLOGY_POINT_LIST),
@@ -286,21 +288,22 @@ int main(int argc, char** argv)
     // add transform to root of the scene graph
     scenegraph->addChild(transform);
  
-     auto vertices = vsg::vec3Array::create({
-         {-0.5f, -0.5f, 0.0f},
-          {0.5f, -0.5f, 0.0f},
-          {0.5f, 0.5f, 0.0f},
-          {-0.5f, 0.5f, 0.0f}
-
+    auto vertices = vsg::vec3Array::create(
+        { {-0.5f, -0.5f, 0.0f},
+         {0.5f, -0.5f, 0.0f},
+         {0.5f, 0.5f, 0.0f},
+         {-0.5f, 0.5f, 0.0f},
          });
     auto colors = vsg::vec3Array::create(
         {
             {1.0f, 0.0f, 0.0f},
             {0.0f, 1.0f, 0.0f},
-            {1.0f, 0.0f, 1.0f},
-            {1.0f, 1.0f, 0.0f}
+            {0.0f, 0.0f, 1.0f},
+            {1.0f, 1.0f, 1.0f},
+            
         }); // VK_FORMAT_R32G32B32_SFLOAT, VK_VERTEX_INPUT_RATE_VERTEX, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE
-  
+    //VK_FORMAT_R32G32B32_SFLOAT, VK_VERTEX_INPUT_RATE_VERTEX, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE
+ 
     
     vsg::ref_ptr<vsg::EllipsoidModel> ellipsoidModel;
 

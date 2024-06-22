@@ -119,9 +119,10 @@ namespace vsg {
 	{
         auto& arrayState = *arrayStateStack.back();
         auto& polytope = _PlaneSegmentStack.back();
+        uint32_t lastIndex = instanceCount > 1 ? (firstInstance + instanceCount) : firstInstance + 1;
         if (arrayState.topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST && vertexCount >= 1)
         {
-            uint32_t lastIndex = instanceCount > 1 ? (firstInstance + instanceCount) : firstInstance + 1;
+           
             for (uint32_t instanceIndex = firstInstance; instanceIndex < lastIndex; ++instanceIndex)
             {
                 bool isIntersect = polytope.contains(arrayState.vertexArray(instanceIndex), true);
@@ -131,20 +132,55 @@ namespace vsg {
                 }
             }
         }
-             /*是否可以合并于上面*/
-        else if(arrayState.topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST|| 
-            arrayState.topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP|| 
-            arrayState.topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
-            arrayState.topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY
+        else if (arrayState.topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST
             && vertexCount >= 2)
         {
-            uint32_t lastIndex = instanceCount > 1 ? (firstInstance + instanceCount) : firstInstance + 1;
+            for (uint32_t instanceIndex = firstInstance; instanceIndex < lastIndex; ++instanceIndex )
+            {
+                int num=arrayState.vertexArray(instanceIndex)->size();
+                for (uint32_t vertIndex = 0; vertIndex < num; vertIndex+=2 )
+                {
+                    bool isIntersect = polytope.contains(dvec3(arrayState.vertexArray(instanceIndex)->at(vertIndex)),dvec3( arrayState.vertexArray(instanceIndex)->at(vertIndex+1)), vertIndex, vertIndex+1);
+                    if (isIntersect)
+                    {
+                        add(polytope, instanceIndex);
+                    }
+                }
+            }
+        }
+        else if (arrayState.topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP
+            && vertexCount >= 2)
+        {
+        
             for (uint32_t instanceIndex = firstInstance; instanceIndex < lastIndex; ++instanceIndex)
             {
-                bool isIntersect = polytope.contains(arrayState.vertexArray(instanceIndex), false);
-                if (isIntersect)
+                int num = arrayState.vertexArray(instanceIndex)->size() ;
+                for (uint32_t vertIndex = 0; vertIndex < num-1; ++vertIndex )
                 {
-                    add(polytope, instanceIndex);
+                    bool isIntersect = polytope.contains(dvec3(arrayState.vertexArray(instanceIndex)->at(vertIndex)), dvec3(arrayState.vertexArray(instanceIndex)->at(vertIndex+1)), vertIndex, vertIndex+1);
+                    if (isIntersect)
+                    {
+                        add(polytope, instanceIndex);
+                    }
+                }
+            }
+        }
+        else if (arrayState.topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+            && vertexCount >= 2)
+        {
+            for (uint32_t instanceIndex = firstInstance; instanceIndex < lastIndex; ++instanceIndex)
+            {
+
+                uint32_t endVertex = int((firstVertex + vertexCount) / 3.0f) * 3;
+
+                for (uint32_t i = firstVertex; i < endVertex; i += 3)
+                {
+                    bool isIntersect = polytope.contains(dvec3(arrayState.vertexArray(instanceIndex)->at(i)), dvec3(arrayState.vertexArray(instanceIndex)->at(i + 1)), dvec3(arrayState.vertexArray(instanceIndex)->at(i + 1)));
+                
+                    if (isIntersect)
+                    {
+                        add(polytope, instanceIndex);
+                    }
                 }
             }
         }
@@ -160,9 +196,10 @@ namespace vsg {
 	{
         auto& arrayState = *arrayStateStack.back();
         auto& polytope = _PlaneSegmentStack.back();
+        uint32_t lastIndex = instanceCount > 1 ? (firstInstance + instanceCount) : firstInstance + 1;
         if (arrayState.topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST && indexCount >= 1)
         {
-            uint32_t lastIndex = instanceCount > 1 ? (firstInstance + instanceCount) : firstInstance + 1;
+          
             for (uint32_t instanceIndex = firstInstance; instanceIndex < lastIndex; ++instanceIndex)
             {
                 bool isIntersect = polytope.contains(arrayState.vertexArray(instanceIndex), true);
@@ -172,19 +209,103 @@ namespace vsg {
                 }
             }
         }
-        else if (arrayState.topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
-            arrayState.topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP ||
-            arrayState.topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
-            arrayState.topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY
+        else if (arrayState.topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST&& indexCount >= 2)
+        {
+            if (ushort_indices)
+            {
+                for (uint32_t instanceIndex = firstInstance; instanceIndex < lastIndex; ++instanceIndex )
+                {
+                    uint32_t num = int((firstIndex+indexCount)/2.0f)*2;
+                    for (uint32_t vertIndex = 0; vertIndex < num; vertIndex += 2)
+                    {
+                        bool isIntersect = polytope.contains(dvec3(arrayState.vertexArray(instanceIndex)->at(ushort_indices->at(vertIndex))), dvec3(arrayState.vertexArray(instanceIndex)->at(ushort_indices->at(vertIndex + 1))), ushort_indices->at(vertIndex ), ushort_indices->at(vertIndex + 1));
+                        if (isIntersect)
+                        {
+                            add(polytope, instanceIndex);
+                        }
+                    }
+                }
+            }
+            if (uint_indices)
+            {
+                for (uint32_t instanceIndex = firstInstance; instanceIndex < lastIndex; ++instanceIndex )
+                {
+                    uint32_t num = int((firstIndex + indexCount) / 2.0f) * 2;
+                    for (uint32_t vertIndex = 0; vertIndex < num; vertIndex += 2)
+                    {
+                        bool isIntersect = polytope.contains(dvec3(arrayState.vertexArray(instanceIndex)->at(uint_indices->at(vertIndex))), dvec3(arrayState.vertexArray(instanceIndex)->at(uint_indices->at(vertIndex + 1))), uint_indices->at(vertIndex), uint_indices->at(vertIndex + 1));
+                        if (isIntersect)
+                        {
+                            add(polytope, instanceIndex);
+                        }
+                    }
+                }
+            }
+        }
+        else if (arrayState.topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP
             && indexCount >= 2)
         {
-            uint32_t lastIndex = instanceCount > 1 ? (firstInstance + instanceCount) : firstInstance + 1;
+         
+            for (uint32_t instanceIndex = firstInstance; instanceIndex < lastIndex; ++instanceIndex )
+            {
+                uint32_t num = (firstIndex + indexCount) - 1;
+                //find index from ushort_indices or uint_indices
+                if (ushort_indices)
+                {
+                    for (uint32_t vertIndex = 0; vertIndex < num ; ++vertIndex)
+                    {
+                        int f = ushort_indices->at(vertIndex);
+                        int s = ushort_indices->at(vertIndex + 1);
+                        bool isIntersect = polytope.contains(dvec3(arrayState.vertexArray(instanceIndex)->at(ushort_indices->at(vertIndex))), dvec3(arrayState.vertexArray(instanceIndex)->at(ushort_indices->at(vertIndex+1))), ushort_indices->at(vertIndex), ushort_indices->at(vertIndex+1));
+                        if (isIntersect)
+                        {
+                            add(polytope, instanceIndex);
+                        }
+                    }
+                }
+                if (uint_indices)
+                {
+                    for (uint32_t vertIndex = 0; vertIndex < num - 1; ++vertIndex)
+                    {
+                        bool isIntersect = polytope.contains(dvec3(arrayState.vertexArray(instanceIndex)->at(uint_indices->at(vertIndex))), dvec3(arrayState.vertexArray(instanceIndex)->at(uint_indices->at(vertIndex+1))), uint_indices->at(vertIndex), uint_indices->at(vertIndex+1));
+                        if (isIntersect)
+                        {
+                            add(polytope, instanceIndex);
+                        }
+                    }
+                }
+            }
+        }
+
+        else if (arrayState.topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+            && indexCount >= 3)
+        {
             for (uint32_t instanceIndex = firstInstance; instanceIndex < lastIndex; ++instanceIndex)
             {
-                bool isIntersect = polytope.contains(arrayState.vertexArray(instanceIndex), false);
-                if (isIntersect)
+                uint32_t endIndex = int((firstIndex + indexCount) / 3.0f) * 3;
+
+                if (ushort_indices)
                 {
-                    add(polytope, instanceIndex);
+                    for (uint32_t i = firstIndex; i < endIndex; i += 3)//dvec3(arrayState.vertexArray(instanceIndex)->at(ushort_indices->at(i))
+                                                                        //
+                    {
+                        bool isIntersect = polytope.contains(dvec3(arrayState.vertexArray(instanceIndex)->at(ushort_indices->at(i))), dvec3(arrayState.vertexArray(instanceIndex)->at(ushort_indices->at(i+1))), dvec3(arrayState.vertexArray(instanceIndex)->at(ushort_indices->at(i+2))));
+                        if (isIntersect)
+                        {
+                            add(polytope, instanceIndex);
+                        }
+                    }
+                }
+                else if (uint_indices)
+                {
+                    for (uint32_t i = firstIndex; i < endIndex; i += 3)
+                    {
+                        bool isIntersect = polytope.contains(dvec3(arrayState.vertexArray(instanceIndex)->at(uint_indices->at(i))), dvec3(arrayState.vertexArray(instanceIndex)->at(uint_indices->at(i + 1))), dvec3(arrayState.vertexArray(instanceIndex)->at(uint_indices->at(i + 2))));
+                        if (isIntersect)
+                        {
+                            add(polytope, instanceIndex);
+                        }
+                    }
                 }
             }
         }
