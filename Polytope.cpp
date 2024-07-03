@@ -2,112 +2,95 @@
 
 
 namespace vsg {
-	
-	void Polytope::add(const vsg::dplane& plane)
+
+	void Polytope::add(const vsg::dplane &plane)
 	{
 		_planeList.emplace_back(plane);
-		
 	}
-	void Polytope::setAndTransformProvidingInverse(const vsg::dmat4& matrix)
-	{	
+
+	void Polytope::setToUnitFrustum(bool withNear, bool withFar)
+	{
+		_planeList.clear();
+		_planeList.emplace_back(dplane(1.0, 0.0, 0.0, 1.0)); // left plane.
+		_planeList.emplace_back(dplane(-1.0, 0.0, 0.0, 1.0)); // right plane.
+		_planeList.emplace_back(dplane(0.0, 1.0, 0.0, 1.0)); // bottom plane.
+		_planeList.emplace_back(dplane(0.0, -1.0, 0.0, 1.0)); // top plane.
+		if (withNear) _planeList.emplace_back(dplane(0.0, 0.0, 1.0, 1.0)); // near plane
+		if (withFar) _planeList.emplace_back(dplane(0.0, 0.0, -1.0, 1.0)); // far plane
+	}
+
+	void Polytope::setToBoundingBox(const vsg::ComputeBounds &bb)
+	{
+		_planeList.clear();
+		_planeList.emplace_back(dplane(1.0, 0.0, 0.0, -bb.bounds.min.x)); // left plane.
+		_planeList.emplace_back(dplane(-1.0, 0.0, 0.0, bb.bounds.max.y)); // right plane.
+		_planeList.emplace_back(dplane(0.0, 1.0, 0.0, -bb.bounds.min.y)); // bottom plane.
+		_planeList.emplace_back(dplane(0.0, -1.0, 0.0, bb.bounds.max.y)); // top plane.
+		_planeList.emplace_back(dplane(0.0, 0.0, 1.0, -bb.bounds.min.z)); // near plane
+		_planeList.emplace_back(dplane(0.0, 0.0, -1.0, bb.bounds.max.z)); // far plane
+	}
+
+	void Polytope::setAndTransformProvidingInverse(const vsg::dmat4 &matrix)
+	{
 		for (int i = 0; i < _planeList.size(); ++i)
 		{
-			_planeList.at(i) =_planeList.at(i)*matrix;
-			
+			_planeList.at(i) = _planeList.at(i) * matrix;
 		}
-
 	}
 	/** Check whether a vertex is contained within clipping set.*/
-	bool Polytope::contains(const vsg::dvec3& v) const
+	bool Polytope::contains(const vsg::dvec3 &v) const
 	{
-		if (_planeList.empty())return false;
-		for (int i=0;i< _planeList.size();i++)
+		if (_planeList.empty())
+			return false;
+
+		for (int i = 0; i < _planeList.size(); i++)
 		{
 			if (vsg::distance(_planeList.at(i), v) < 0.0f)
 			{
-				
 				return false;
 			}
 		}
-		return true;
-	}
-	/*Check whether a line is contained or cross the plane no parallel*/
-	bool Polytope::contains(const vsg::dvec3& v1, const vsg::dvec3& v2,uint32_t &firstIndex, uint32_t&secondIndex)
-	{
-		if (_planeList.empty())return false;
-		for (int i = 0; i < _planeList.size(); i++)
-		{
-			if (vsg::distance(_planeList.at(i), v1) < 0.0f&& vsg::distance(_planeList.at(i), v2)<0.0f)
-			{
-				return false;
-			}
-		}
-		_containVertexIndexList.emplace_back(firstIndex);
-		_containVertexIndexList.emplace_back(secondIndex);
-		_containVertexList.emplace_back(dvec3(v1));
-		_containVertexList.emplace_back(dvec3(v2));
 		return true;
 	}
 
-	bool Polytope::contains(const vsg::dvec3& v1, const vsg::dvec3& v2, const uint16_t& firstIndex,const uint16_t& secondIndex)
+	bool Polytope::contains(const vsg::dvec3 &v1, const vsg::dvec3 &v2)
 	{
-		if (_planeList.empty())return false;
+		if (_planeList.empty())
+			return false;
+
 		for (int i = 0; i < _planeList.size(); i++)
 		{
-			if (vsg::distance(_planeList.at(i), v1) < 0.0f && vsg::distance(_planeList.at(i), v2) < 0.0f)
+			if (vsg::distance(_planeList.at(i), v1) < 0.0f)
 			{
 				return false;
 			}
 		}
-		_containVertexIndexList.emplace_back(firstIndex);
-		_containVertexIndexList.emplace_back(secondIndex);
-		_containVertexList.emplace_back(dvec3(v1));
-		_containVertexList.emplace_back(dvec3(v2));
-		return true;
+		return false;
 	}
 
-	bool Polytope::contains(const vsg::dvec3& v1, const vsg::dvec3& v2, const vsg::dvec3& v3)
-	{
-		if (_planeList.empty())return false;
-		auto Triangle_vert = vsg::dvec3Array::create({ v1,v2,v3 });
-		bool suc;
-		for (int j = 0; j < Triangle_vert->size(); j++)
-		{
-			bool inPlane=checkInPlanlist(Triangle_vert->at(j));
-			if (inPlane)
-			{
-				_containVertexList.emplace_back(v1);
-				_containVertexList.emplace_back(v2);
-				_containVertexList.emplace_back(v3);
-				return true;
-			}
-		}
-		
-		
-	}
 	/** Check whether any part of vertex list is contained within clipping set.*/
-	bool Polytope::contains(ref_ptr<const vec3Array>vertices,bool checkAll)
+	bool Polytope::contains(ref_ptr<const vec3Array>vertices, bool iscatchOne)
 	{
-		if (_planeList.empty())return false;
+		if (_planeList.empty()) return false;
 		//could get the Index of vertices
-		for (int i =0; i<vertices->size();++i)
+		for (int i = 0; i < vertices->size(); ++i)
 		{
-			const vsg::vec3& v = vertices->at(i);
+			const vsg::vec3 &v = vertices->at(i);
 			bool outside = false;
-			
-			for (int j = 0; j < _planeList.size();++j)
+
+			for (int j = 0; j < _planeList.size(); ++j)
 			{
 				auto dis = distance(_planeList.at(j), dvec3(v));
-				
+
 				if (dis < 0.0f) outside = true;
 			}
 
 			if (!outside)
 			{
-				_containVertexIndexList.emplace_back(i);
-				_containVertexList.emplace_back(dvec3(v));
+				_containVertexIndexList.push_back(i);
+				_containVertexList.push_back(dvec3(v));
 				/*check one*/
-				if (!checkAll)
+				if (iscatchOne)
 				{
 					return true;
 				}
@@ -117,20 +100,20 @@ namespace vsg {
 		return !_containVertexList.empty();
 	}
 
-	bool Polytope::contains(const vsg::dsphere& dsp)
+	//包围验证无误
+	bool Polytope::contains(const vsg::dsphere &dsp)
 	{
-		if (_planeList.empty())return false;
+		if (_planeList.empty())
+			return false;
 
-		for (auto itr = _planeList.begin(); itr != _planeList.end(); itr++)
-		{
-			if (vsg::distance(*itr, dsp.center) > -dsp.radius)return false;
-
-		}
-		return true;
-
-		
+		return vsg::intersect(_planeList, dsp);
 	}
+	int Polytope::intersect(const dplane &plane, const dsphere &dsp) const
+	{
+		double d = distance(plane, dsp.center);
 
-
-
+		if (d > dsp.radius) return 1;
+		else if (d < -dsp.radius) return -1;
+		else return 0;
+	}
 }
