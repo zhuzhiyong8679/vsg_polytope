@@ -100,7 +100,7 @@ namespace vsg {
 		return !_containVertexList.empty();
 	}
 
-	//包围验证无误
+	
 	bool Polytope::contains(const vsg::dsphere &dsp)
 	{
 		if (_planeList.empty())
