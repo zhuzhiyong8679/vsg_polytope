@@ -130,7 +130,7 @@ namespace vsg {
 				}
 			}
 		}
-		/*是否可以合并于上面*/
+		
 		else if (arrayState.topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
 				 arrayState.topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP ||
 				 arrayState.topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
